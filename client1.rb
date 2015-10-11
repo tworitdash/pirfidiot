@@ -2,16 +2,18 @@
 
 require_relative 'em-websocket-client'
 require "serialport"
+require "json"
 
 
 
 
 EM.run do
     #conn = EventMachine::WebSocketClient.connect("ws://example.com:8000/")
-    conn = EventMachine::WebSocketClient.connect("ws://IP_address:8000/")
+    conn = EventMachine::WebSocketClient.connect("ws://192.168.43.26:8000/")
     #put the IP adress of the server machine in case of IP_address
     conn.callback do
-        conn.send_msg "test"
+        msg = {"type" => "connection", "id" => "0", "name" => "RFID Tag"}.to_json
+        conn.send_msg msg
     end
 
     conn.errback do |e|
@@ -19,10 +21,9 @@ EM.run do
     end
 
     conn.stream do |msg|
-
-        to_send = msg.to_s 
-
-        port_file = "/dev/ttyACM0"
+         
+        list_of_tags_authenticated = ["02000F0E94\r\n"] 
+        port_file = "/dev/cu.usbmodem1421"
         #port_file is according to the path to your controller
         baud_rate = 9600
         data_bits = 8
@@ -30,14 +31,29 @@ EM.run do
         parity = SerialPort::NONE
         #serialport object
         ser = SerialPort.new(port_file , baud_rate , data_bits , stop_bits , parity)
-
-        if to_send == "your_authenticated_id"
-            #put the result of tag.inspect of the tag in place of "your_authenticated_tag_id" that you want to use as an authenticated tag from the client.rb file.
-            ser.write("b")
-            #it sends the data "b" to the controller connected to the /dev/ttyACM0 in your system. Tested in arduino and ARM Cortex M4 (tm4c123g)
-
+        if msg.to_s != "connected"
+            File.open("public/temp.json", 'w') do |f|
+                f.write(msg)
+            end
         end
-	puts "received msg: #{msg}" #prints the tag ID (optional)
+
+        file = File.read("public/temp.json")
+
+        id_hash = JSON.parse(file)
+        id = id_hash['id']
+        name = id_hash['name']
+
+        list_of_tags_authenticated.each do |authenticated_tag_id|
+            if id == authenticated_tag_id and name == "LockID"
+                ser.write('b')
+                puts "b is written to the card"
+            else 
+                puts "invalid card, Try again !"
+            end
+        end
+
+        
+	       #puts "received msg: #{msg}" #prints the tag ID (optional)
 	
         
     end

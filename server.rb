@@ -26,11 +26,7 @@ EM.run do
         end
 
         ws.onmessage do |msg|
-	   puts "Received Message: #{msg}"
-	   ser = msg.to_json
-	   puts tag = JSON.parse(ser, :quirks_mode => true)
-	   puts msg.class
-
+        	puts "Received Message: #{msg}"
             #The data collected from the server is then sent to each of the connected clients to the server. 
             @clients.each do |socket|
                 socket.send msg
