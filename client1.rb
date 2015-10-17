@@ -46,7 +46,7 @@ EM.run do
         list_of_tags_authenticated.each do |authenticated_tag_id|
             if id == authenticated_tag_id and name == "LockID"
                 ser.write('b')
-                puts "b is written to the card"
+                puts "b is written to the controller"
             else 
                 puts "invalid card, Try again !"
             end
